@@ -315,7 +315,7 @@ public class UltimateBeatBoxClient {
             try {
                 oos.writeObject(mUserName + ": " + mUserMessage.getText());
                 oos.writeObject(checkBoxState);
-                oos.close();
+
             } catch (IOException ex) {
                 Logger.getLogger(UltimateBeatBoxClient.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -334,6 +334,7 @@ public class UltimateBeatBoxClient {
                     sequencer.stop();
                     buildTrackAndLaunch();
                 }
+
             }
         }
     }
