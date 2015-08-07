@@ -1,8 +1,9 @@
 /**
  *
- * @author Rayed Bin Wahed 12201114 CSE BRAC University CSE310 Final Project:
+ * @author Rayed Bin Wahed - 12201114 BRAC University CSE310 Final Project:
  * Client-Server Beat Box Application
  *
+ * Client Code
  */
 package ultimatebeatbox;
 
@@ -14,9 +15,11 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Scanner;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -86,18 +89,18 @@ public class UltimateBeatBoxClient {
     }
 
     private void startUp() {
-//        System.out.print("Enter User Name: ");
-//        Scanner scanner = new Scanner(System.in);
-//        mUserName = scanner.nextLine();
-//        try {
-//            Socket socket = new Socket("127.0.0.1", 7777);
-//            oos = new ObjectOutputStream(socket.getOutputStream());
-//            ois = new ObjectInputStream(socket.getInputStream());
-//            Thread remote = new Thread(new RemoteReader());
-//            remote.start();
-//        } catch (IOException ex) {
-//            Logger.getLogger(UltimateBeatBoxClient.class.getName()).log(Level.SEVERE, null, ex);
-//        }
+        System.out.print("Enter User Name: ");
+        Scanner scanner = new Scanner(System.in);
+        mUserName = scanner.nextLine();
+        try {
+            Socket socket = new Socket("127.0.0.1", 7777);
+            oos = new ObjectOutputStream(socket.getOutputStream());
+            ois = new ObjectInputStream(socket.getInputStream());
+            Thread remote = new Thread(new RemoteReader());
+            remote.start();
+        } catch (IOException ex) {
+            Logger.getLogger(UltimateBeatBoxClient.class.getName()).log(Level.SEVERE, null, ex);
+        }
         buildGUI();
         setUpMIDI();
     }
@@ -230,10 +233,10 @@ public class UltimateBeatBoxClient {
         }
         return event;
     }
-    
-    private void changeSequence(boolean[] checkBoxState){
-        for (int i = 0; i < 256; ++i){
-            if (checkBoxState[i]){
+
+    private void changeSequence(boolean[] checkBoxState) {
+        for (int i = 0; i < 256; ++i) {
+            if (checkBoxState[i]) {
                 mCheckBoxList.get(i).setSelected(true);
             } else {
                 mCheckBoxList.get(i).setSelected(false);
@@ -304,14 +307,15 @@ public class UltimateBeatBoxClient {
         @Override
         public void actionPerformed(ActionEvent e) {
             boolean[] checkBoxState = new boolean[256];
-            for (int i = 0; i < 256; ++i){
-                if(mCheckBoxList.get(i).isSelected()){
+            for (int i = 0; i < 256; ++i) {
+                if (mCheckBoxList.get(i).isSelected()) {
                     checkBoxState[i] = true;
                 }
             }
             try {
                 oos.writeObject(mUserName + ": " + mUserMessage.getText());
                 oos.writeObject(checkBoxState);
+                oos.close();
             } catch (IOException ex) {
                 Logger.getLogger(UltimateBeatBoxClient.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -323,13 +327,14 @@ public class UltimateBeatBoxClient {
 
         @Override
         public void valueChanged(ListSelectionEvent e) {
-            if (!e.getValueIsAdjusting()){
-                String selectedUser = (String) mIncomingList.getSelectedValue();
-                changeSequence(othersSequenceMap.get(selectedUser));
-                sequencer.stop();
-                buildTrackAndLaunch();
+            if (!e.getValueIsAdjusting()) {
+                String selected = (String) mIncomingList.getSelectedValue();
+                if (selected != null) {
+                    changeSequence(othersSequenceMap.get(selected));
+                    sequencer.stop();
+                    buildTrackAndLaunch();
+                }
             }
         }
     }
-
 }
