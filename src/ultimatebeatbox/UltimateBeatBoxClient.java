@@ -180,6 +180,35 @@ public class UltimateBeatBoxClient {
         }
     }
 
+    private void buildTrackAndLaunch() {
+        ArrayList<Integer> trackList;
+        sequence.deleteTrack(track);
+        track = sequence.createTrack();
+
+        for (int i = 0; i < 16; ++i) {
+            trackList = new ArrayList<>();
+            for (int j = 0; j < 16; ++j) {
+                JCheckBox checkBox = mCheckBoxList.get(j + 16 * i);
+                if (checkBox.isSelected()) {
+                    int instrumentNumber = mInstruments[i];
+                    trackList.add(instrumentNumber);
+                } else {
+                    trackList.add(null);
+                }
+            }
+            makeTracks(trackList);
+        }
+        try {
+            track.add(makeEvent(192, 9, 1, 0, 15));
+            sequencer.setSequence(sequence);
+            sequencer.setLoopCount(Sequencer.LOOP_CONTINUOUSLY);
+            sequencer.setTempoInBPM(120);
+            sequencer.start();
+        } catch (InvalidMidiDataException ex) {
+            Logger.getLogger(UltimateBeatBoxClient.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
     private void makeTracks(ArrayList trackList) {
         Iterator it = trackList.iterator();
         for (int i = 0; i < 16; ++i) {
@@ -200,6 +229,16 @@ public class UltimateBeatBoxClient {
             Logger.getLogger(UltimateBeatBoxClient.class.getName()).log(Level.SEVERE, null, ex);
         }
         return event;
+    }
+    
+    private void changeSequence(boolean[] checkBoxState){
+        for (int i = 0; i < 256; ++i){
+            if (checkBoxState[i]){
+                mCheckBoxList.get(i).setSelected(true);
+            } else {
+                mCheckBoxList.get(i).setSelected(false);
+            }
+        }
     }
 
     private class RemoteReader implements Runnable {
@@ -230,31 +269,7 @@ public class UltimateBeatBoxClient {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            ArrayList<Integer> trackList;
-            sequence.deleteTrack(track);
-            track = sequence.createTrack();
-
-            for (int i = 0; i < 16; ++i) {
-                trackList = new ArrayList<>();
-                for (int j = 0; j < 16; ++j) {
-                    JCheckBox checkBox = mCheckBoxList.get(j + 16 * i);
-                    if (checkBox.isSelected()) {
-                        int instrumentNumber = mInstruments[i];
-                        trackList.add(instrumentNumber);
-                    } else {
-                        trackList.add(null);
-                    }
-                }
-                makeTracks(trackList);
-            }
-            try {
-                track.add(makeEvent(192, 9, 1, 0, 15));
-                sequencer.setSequence(sequence);
-                sequencer.setLoopCount(Sequencer.LOOP_CONTINUOUSLY);
-                sequencer.setTempoInBPM(120);
-            } catch (InvalidMidiDataException ex) {
-                Logger.getLogger(UltimateBeatBoxClient.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            buildTrackAndLaunch();
         }
     }
 
@@ -262,7 +277,7 @@ public class UltimateBeatBoxClient {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            sequencer.stop();
         }
     }
 
@@ -270,7 +285,8 @@ public class UltimateBeatBoxClient {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            float tempoFactor = sequencer.getTempoFactor();
+            sequencer.setTempoFactor((float) (tempoFactor * 1.03));
         }
     }
 
@@ -278,7 +294,8 @@ public class UltimateBeatBoxClient {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            float tempoFactor = sequencer.getTempoFactor();
+            sequencer.setTempoFactor((float) (tempoFactor * 0.97));
         }
     }
 
@@ -286,7 +303,19 @@ public class UltimateBeatBoxClient {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            boolean[] checkBoxState = new boolean[256];
+            for (int i = 0; i < 256; ++i){
+                if(mCheckBoxList.get(i).isSelected()){
+                    checkBoxState[i] = true;
+                }
+            }
+            try {
+                oos.writeObject(mUserName + ": " + mUserMessage.getText());
+                oos.writeObject(checkBoxState);
+            } catch (IOException ex) {
+                Logger.getLogger(UltimateBeatBoxClient.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            mUserMessage.setText("");
         }
     }
 
@@ -294,7 +323,12 @@ public class UltimateBeatBoxClient {
 
         @Override
         public void valueChanged(ListSelectionEvent e) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            if (!e.getValueIsAdjusting()){
+                String selectedUser = (String) mIncomingList.getSelectedValue();
+                changeSequence(othersSequenceMap.get(selectedUser));
+                sequencer.stop();
+                buildTrackAndLaunch();
+            }
         }
     }
 
