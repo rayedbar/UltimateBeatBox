@@ -12,6 +12,10 @@ import java.awt.GridLayout;
 import java.awt.Label;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -36,8 +40,12 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JList;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
@@ -163,7 +171,22 @@ public class UltimateBeatBoxClient {
         background.add(BorderLayout.EAST, buttonBox);
         background.add(BorderLayout.WEST, nameBox);
 
+        JMenuBar menuBar = new JMenuBar();
+        JMenu fileMenu = new JMenu("File");
+        JMenuItem saveMenuItem = new JMenuItem("Save");
+        saveMenuItem.addActionListener(new SaveMenuItemListener());
+        JMenuItem openMenuItem = new JMenuItem("Open");
+        openMenuItem.addActionListener(new OpenMenuItemListener());
+        JMenuItem clearMenuItem = new JMenuItem("Clear");
+        clearMenuItem.addActionListener(new ClearMenuItemListener());
+
+        fileMenu.add(saveMenuItem);
+        fileMenu.add(openMenuItem);
+        fileMenu.add(clearMenuItem);
+        menuBar.add(fileMenu);
+
         mFrame = new JFrame("Ultimate Beat Box");
+        mFrame.setJMenuBar(menuBar);
         mFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         mFrame.getContentPane().add(background);
         mFrame.setBounds(50, 50, 300, 300);
@@ -315,7 +338,6 @@ public class UltimateBeatBoxClient {
             try {
                 oos.writeObject(mUserName + ": " + mUserMessage.getText());
                 oos.writeObject(checkBoxState);
-
             } catch (IOException ex) {
                 Logger.getLogger(UltimateBeatBoxClient.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -338,4 +360,69 @@ public class UltimateBeatBoxClient {
             }
         }
     }
+
+    private class SaveMenuItemListener implements ActionListener {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            //System.out.println("you clicked on save");
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.showSaveDialog(mFrame);
+            File file = fileChooser.getSelectedFile();
+            saveFile(file);
+        }
+
+        private void saveFile(File file) {
+            boolean[] checkBoxState = new boolean[256];
+            for (int i = 0; i < 256; ++i) {
+                if (mCheckBoxList.get(i).isSelected()) {
+                    checkBoxState[i] = true;
+                }
+            }
+            try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(file))) {
+                out.writeObject(checkBoxState);
+            } catch (FileNotFoundException ex) {
+                Logger.getLogger(UltimateBeatBoxClient.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException ex) {
+                Logger.getLogger(UltimateBeatBoxClient.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+
+    private class OpenMenuItemListener implements ActionListener {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            //System.out.println("you clicked on opoen");
+            JFileChooser fileOpener = new JFileChooser();
+            fileOpener.showOpenDialog(mFrame);
+            File file = fileOpener.getSelectedFile();
+            openFile(file);
+        }
+
+        private void openFile(File file) {
+            boolean[] checkBoxState;
+            try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(file))) {
+                checkBoxState = (boolean[]) in.readObject();
+                changeSequence(checkBoxState);
+            } catch (FileNotFoundException ex) {
+                Logger.getLogger(UltimateBeatBoxClient.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException | ClassNotFoundException ex) {
+                Logger.getLogger(UltimateBeatBoxClient.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+    
+    
+    private class ClearMenuItemListener implements ActionListener {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            for (int i = 0; i < 256; ++i){
+                if(mCheckBoxList.get(i).isSelected())
+                    mCheckBoxList.get(i).setSelected(false);
+            }
+        }
+    }
+
 }

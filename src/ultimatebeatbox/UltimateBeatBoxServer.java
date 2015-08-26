@@ -78,8 +78,8 @@ public class UltimateBeatBoxServer {
 
         @Override
         public void run() {
-            Object o1 = null;
-            Object o2 = null;
+            Object o1;
+            Object o2;
             try {
                 while ((o1 = ois.readObject()) != null){
                     o2 = ois.readObject();
